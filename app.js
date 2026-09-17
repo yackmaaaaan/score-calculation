@@ -46,58 +46,112 @@ function fmt(x) {
   });
 }
 
-/*
- * 「上がり」と「特殊上がり」の矛盾した組み合わせを
- * 同時に選択できないようにする。
- *
- * ツモ       × 門前ロン
- * ロン       × 平和ツモ
- */
+
+/* ========================================
+   上がり・特殊上がりの選択制限
+   ======================================== */
+
+const AGARI_OPTIONS = [
+  ["ツモ", "ツモ"],
+  ["ロン", "ロン"]
+];
+
+const SPECIAL_OPTIONS = [
+  ["なし", "なし"],
+  ["七対子", "七対子"],
+  ["平和ツモ", "平和ツモ"],
+  ["門前ロン", "門前ロン"]
+];
+
 function updateAgariSpecialOptions() {
+
   const agari = $("agari");
   const special = $("special");
 
-  // 特殊上がり側の選択肢を制限
-  Array.from(special.options).forEach(o => {
-    o.disabled =
-      (agari.value === "ツモ" && o.value === "門前ロン") ||
-      (agari.value === "ロン" && o.value === "平和ツモ");
-  });
-
-  // 上がり側の選択肢を制限
-  Array.from(agari.options).forEach(o => {
-    o.disabled =
-      (special.value === "平和ツモ" && o.value === "ロン") ||
-      (special.value === "門前ロン" && o.value === "ツモ");
-  });
+  const currentAgari = agari.value;
+  const currentSpecial = special.value;
 
   /*
-   * 万一、HTMLやブラウザ側の状態によって
-   * 矛盾した組み合わせになった場合は、
-   * 特殊上がりを「なし」に戻す。
+   * 上がり
+   *
+   * 特殊上がりが平和ツモ → ロンを除外
+   * 特殊上がりが門前ロン → ツモを除外
    */
+  agari.innerHTML = "";
+
+  AGARI_OPTIONS.forEach(([value, text]) => {
+
+    if (
+      (currentSpecial === "平和ツモ" && value === "ロン") ||
+      (currentSpecial === "門前ロン" && value === "ツモ")
+    ) {
+      return;
+    }
+
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+
+    agari.appendChild(option);
+  });
+
+
+  /*
+   * 特殊上がり
+   *
+   * 上がりがツモ → 門前ロンを除外
+   * 上がりがロン → 平和ツモを除外
+   */
+  special.innerHTML = "";
+
+  SPECIAL_OPTIONS.forEach(([value, text]) => {
+
+    if (
+      (currentAgari === "ツモ" && value === "門前ロン") ||
+      (currentAgari === "ロン" && value === "平和ツモ")
+    ) {
+      return;
+    }
+
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+
+    special.appendChild(option);
+  });
+
+
+  /*
+   * 現在の選択が残っていれば維持。
+   * 残っていなければ安全な値に戻す。
+   */
+
   if (
-    (agari.value === "ツモ" && special.value === "門前ロン") ||
-    (agari.value === "ロン" && special.value === "平和ツモ")
+    Array.from(agari.options)
+      .some(o => o.value === currentAgari)
   ) {
+    agari.value = currentAgari;
+  } else {
+    agari.value = "ツモ";
+  }
+
+
+  if (
+    Array.from(special.options)
+      .some(o => o.value === currentSpecial)
+  ) {
+    special.value = currentSpecial;
+  } else {
     special.value = "なし";
-    updateAgariSpecialOptions();
   }
 }
 
 
-/*
- * メイン計算
- *
- * Excelの
- * B12～B22
- * の計算式を基本的にそのままJavaScriptへ移植。
- */
-function calc() {
+/* ========================================
+   メイン計算
+   ======================================== */
 
-  // -------------------------
-  // B12：面子符
-  // -------------------------
+function calc() {
 
   const C3 = +$("ankoC").value;
   const D3 = +$("ankoY").value;
@@ -111,6 +165,9 @@ function calc() {
   const C6 = +$("minkanC").value;
   const D6 = +$("minkanY").value;
 
+
+  /* B12：面子符 */
+
   const mentsu =
     (C3 * 4) +
     (D3 * 8) +
@@ -122,9 +179,7 @@ function calc() {
     (D6 * 16);
 
 
-  // -------------------------
-  // B13：雀頭符
-  // -------------------------
+  /* B13：雀頭符 */
 
   const janto =
     $("janto").value.includes("以外")
@@ -132,9 +187,7 @@ function calc() {
       : 2;
 
 
-  // -------------------------
-  // B14：待ち符
-  // -------------------------
+  /* B14：待ち符 */
 
   const machi =
     ["両面", "シャンポン"].includes($("machi").value)
@@ -142,9 +195,7 @@ function calc() {
       : 2;
 
 
-  // -------------------------
-  // B15：上がり符
-  // -------------------------
+  /* B15：上がり符 */
 
   const agari =
     $("agari").value.includes("ロン")
@@ -152,9 +203,7 @@ function calc() {
       : 2;
 
 
-  // -------------------------
-  // B16：10符単位に切り上げ
-  // -------------------------
+  /* B16：10符単位に切り上げ */
 
   const subtotal =
     Math.ceil(
@@ -162,25 +211,20 @@ function calc() {
     ) * 10;
 
 
-  // -------------------------
-  // B17：符
-  // -------------------------
+  /* B17：符 */
 
   let calculatedFu;
 
   if ($("special").value.includes("七対子")) {
 
-    // 七対子
     calculatedFu = 25;
 
   } else if ($("special").value.includes("平和ツモ")) {
 
-    // 平和ツモ
     calculatedFu = 0;
 
   } else if ($("special").value.includes("門前ロン")) {
 
-    // 門前ロン
     calculatedFu = subtotal + 10;
 
   } else {
@@ -189,16 +233,8 @@ function calc() {
   }
 
 
-  /*
-   * Excelでは通常、
-   *
-   * 特殊上がりの符 + 20
-   *
-   * となる。
-   *
-   * ただし手動符入力時は、
-   * D17の値をそのまま使う。
-   */
+  /* 手動符 */
+
   const manual =
     $("manualOn").checked &&
     $("manualFu").value !== "";
@@ -207,7 +243,6 @@ function calc() {
 
   if (manual) {
 
-    // 手動入力値をそのまま使用
     fu = +$("manualFu").value;
 
   } else {
@@ -216,39 +251,20 @@ function calc() {
   }
 
 
-  // -------------------------
-  // 通常点数
-  // -------------------------
-
-  /*
-   * Excel：
-   *
-   * 親 = 48
-   * 子 = 32
-   *
-   * × 符
-   * × 2^(飜数-1)
-   */
+  /* ========================================
+     通常点数
+     ======================================== */
 
   const base =
     (parent ? 48 : 32) *
     fu *
     Math.pow(2, han - 1);
 
-
   let score;
 
 
-  /*
-   * 飜数による満貫以上の表示
-   *
-   * 6～7飜  → 跳満
-   * 8～10飜 → 倍満
-   * 11～12飜 → 三倍満
-   * 13飜以上 → 数え役満
-   *
-   * これはユーザー指定の表示ルール。
-   */
+  /* 飜数による表示 */
+
   if (han >= 13) {
 
     score = "数え役満";
@@ -269,19 +285,16 @@ function calc() {
     ceil100(base) >= (parent ? 12000 : 8000)
   ) {
 
-    // Excelの満貫判定
     score = "満貫";
 
   } else if (
     $("agari").value.includes("ロン")
   ) {
 
-    // ロン
     score = fmt(ceil100(base));
 
   } else if (parent) {
 
-    // 親ツモ
     score =
       fmt(
         ceil100(
@@ -291,7 +304,6 @@ function calc() {
 
   } else {
 
-    // 子ツモ
     score =
       fmt(
         ceil100(
@@ -307,43 +319,29 @@ function calc() {
   }
 
 
-  // -------------------------
-  // B22：青天井
-  // -------------------------
-
-  /*
-   * Excelの青天井計算式を維持。
-   *
-   * 親 = 6
-   * 子 = 4
-   *
-   * × 符
-   * × 2^(飜数+2)
-   */
+  /* ========================================
+     青天井
+     ======================================== */
 
   const unit =
     (parent ? 6 : 4) *
     fu *
     Math.pow(2, han + 2);
 
-
   let aoten;
 
   if ($("agari").value.includes("ロン")) {
 
-    // ロン
     aoten = fmt(unit);
 
   } else if (parent) {
 
-    // 親ツモ
     aoten =
       fmt(unit / 3) +
       "オール";
 
   } else {
 
-    // 子ツモ
     aoten =
       fmt(unit / 4) +
       "-" +
@@ -351,9 +349,9 @@ function calc() {
   }
 
 
-  // -------------------------
-  // 画面表示
-  // -------------------------
+  /* ========================================
+     表示
+     ======================================== */
 
   $("mentsuFu").textContent =
     mentsu + "符";
@@ -372,9 +370,9 @@ function calc() {
 }
 
 
-// -------------------------
-// 各入力項目のイベント
-// -------------------------
+/* ========================================
+   イベント
+   ======================================== */
 
 ids.forEach(id => {
   $(id).addEventListener("change", calc);
@@ -385,7 +383,6 @@ ids.forEach(id => {
 });
 
 
-// 上がり
 $("agari").addEventListener("change", () => {
 
   updateAgariSpecialOptions();
@@ -394,7 +391,6 @@ $("agari").addEventListener("change", () => {
 });
 
 
-// 特殊上がり
 $("special").addEventListener("change", () => {
 
   updateAgariSpecialOptions();
@@ -403,9 +399,7 @@ $("special").addEventListener("change", () => {
 });
 
 
-// -------------------------
-// 飜数
-// -------------------------
+/* 飜数 */
 
 $("minus").onclick = () => {
 
@@ -427,9 +421,7 @@ $("plus").onclick = () => {
 };
 
 
-// -------------------------
-// 親・子
-// -------------------------
+/* 親・子 */
 
 document
   .querySelectorAll("[data-parent]")
@@ -457,9 +449,7 @@ document
   });
 
 
-// -------------------------
-// 手動符
-// -------------------------
+/* 手動符 */
 
 $("manualOn").onchange = () => {
 
@@ -469,13 +459,12 @@ $("manualOn").onchange = () => {
   calc();
 };
 
-
 $("manualFu").oninput = calc;
 
 
-// -------------------------
-// リセット
-// -------------------------
+/* ========================================
+   リセット
+   ======================================== */
 
 $("reset").onclick = () => {
 
@@ -483,17 +472,11 @@ $("reset").onclick = () => {
     $(id).value = 0;
   });
 
-  $("janto").value =
-    "役牌以外";
+  $("janto").value = "役牌以外";
+  $("machi").value = "両面";
 
-  $("machi").value =
-    "両面";
-
-  $("agari").value =
-    "ツモ";
-
-  $("special").value =
-    "なし";
+  $("agari").value = "ツモ";
+  $("special").value = "なし";
 
   han = 2;
   parent = false;
@@ -503,9 +486,7 @@ $("reset").onclick = () => {
   $("manualOn").checked = false;
 
   $("manualFu").value = "";
-
   $("manualFu").disabled = true;
-
 
   document
     .querySelectorAll("[data-parent]")
@@ -518,31 +499,31 @@ $("reset").onclick = () => {
 
     });
 
-
   updateAgariSpecialOptions();
 
   calc();
 };
 
 
-// -------------------------
-// 初期化
-// -------------------------
+/* ========================================
+   初期化
+   ======================================== */
 
 updateAgariSpecialOptions();
-
 calc();
 
 
-// -------------------------
-// PWA Service Worker
-// -------------------------
+/* ========================================
+   PWA Service Worker
+   ======================================== */
 
 if ("serviceWorker" in navigator) {
 
   window.addEventListener("load", () => {
 
-    navigator.serviceWorker.register("sw.js");
+    navigator.serviceWorker.register(
+      "sw.js"
+    );
 
   });
 
