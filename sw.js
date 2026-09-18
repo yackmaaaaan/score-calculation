@@ -1,4 +1,4 @@
-const CACHE = "mahjong-score-v10";
+const CACHE = "mahjong-score-v11";
 
 const ASSETS = [
   "./",
