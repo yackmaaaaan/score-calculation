@@ -1,14 +1,1 @@
-{
-  "name":"麻雀 点数計算",
-  "short_name":"点数計算",
-  "start_url":"./",
-  "display":"standalone",
-  "background_color":"#f3f4f6",
-  "theme_color":"#111827",
-   {
-      "src": "score-icon.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  "lang":"ja"
-}
+{"name":"麻雀 点数計算・手牌判定","short_name":"麻雀点数","start_url":"./","display":"standalone","background_color":"#eef5ff","theme_color":"#1d4ed8"}

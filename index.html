@@ -1,61 +1,68 @@
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111827">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="score-icon.png">
-<link rel="stylesheet" href="style.css">
-<title>麻雀 点数計算</title>
-</head>
-<body>
-<main class="app">
-  <header><h1>麻雀 点数計算</h1><button id="reset" class="ghost">リセット</button></header>
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d4ed8"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css">
+<title>麻雀 点数計算・手牌判定</title></head><body><main class="app">
+<header><div><h1><img src="./ui-icons/mahjong.svg" class="title-icon" alt="">麻雀 点数計算</h1><p>符計算・手牌自動判定 完全版</p></div><button id="resetAll" class="ghost">リセット</button></header>
+<nav class="tabs"><button class="tab active" data-tab="manual"><img src="./ui-icons/calculator.svg" class="tab-icon" alt="">簡易計算</button><button class="tab" data-tab="auto"><img src="./ui-icons/hand.svg" class="tab-icon" alt="">手牌から自動判定</button></nav>
 
-  <section class="card">
-    <h2>面子構成</h2>
-    <div class="grid">
-      <label>暗刻（中張牌）<select id="ankoC"></select></label>
-      <label>暗刻（么九牌）<select id="ankoY"></select></label>
-      <label>明刻（中張牌）<select id="minkoC"></select></label>
-      <label>明刻（么九牌）<select id="minkoY"></select></label>
-      <label>暗槓（中張牌）<select id="ankanC"></select></label>
-      <label>暗槓（么九牌）<select id="ankanY"></select></label>
-      <label>明槓（中張牌）<select id="minkanC"></select></label>
-      <label>明槓（么九牌）<select id="minkanY"></select></label>
-    </div>
-  </section>
+<section id="manual" class="tabpane active">
+<section class="card"><h2>面子構成</h2><div class="grid">
+<label>暗刻（中張）<select id="m_ankoC"></select></label><label>暗刻（么九）<select id="m_ankoY"></select></label>
+<label>明刻（中張）<select id="m_minkoC"></select></label><label>明刻（么九）<select id="m_minkoY"></select></label>
+<label>暗槓（中張）<select id="m_ankanC"></select></label><label>暗槓（么九）<select id="m_ankanY"></select></label>
+<label>明槓（中張）<select id="m_minkanC"></select></label><label>明槓（么九）<select id="m_minkanY"></select></label>
+</div></section>
+<section class="card"><h2>その他</h2><div class="grid">
+<label>雀頭<select id="m_janto"><option>役牌以外</option><option>役牌</option></select></label>
+<label>待ち<select id="m_machi"><option>両面</option><option>辺張</option><option>嵌張</option><option>シャンポン</option><option>単騎</option></select></label>
+<label>上がり<select id="m_agari"><option>ツモ</option><option>ロン</option></select></label>
+<label>特殊上がり<select id="m_special"><option>なし</option><option>七対子</option><option>平和ツモ</option><option>門前ロン</option></select></label>
+</div></section>
+<section class="card"><h2>飜数・親子</h2><div class="hanrow"><button id="m_minus">−</button><b id="m_han">2</b><button id="m_plus">＋</button><span>飜</span></div><div class="seg"><button class="active" data-parent="false">子</button><button data-parent="true">親</button></div></section>
+<section class="card result"><div class="resultline"><span>面子構成</span><b id="m_mentsuFu">0符</b></div><div class="resultline"><span>小計</span><b id="m_subtotal">20符</b></div><label class="inline"><input type="checkbox" id="m_manualOn"> 符を手動入力 <input id="m_manualFu" type="number" min="0" step="1" placeholder="40" disabled></label>
+<div class="big"><small>合計符</small><strong id="m_fu">20符</strong></div><div class="big"><small>点数</small><strong id="m_score">—</strong></div><div class="big secondary"><small>点数（青天井）</small><strong id="m_aoten">—</strong></div></section></section>
 
-  <section class="card">
-    <h2>その他</h2>
-    <div class="grid">
-      <label>雀頭<select id="janto"><option>役牌以外</option><option>役牌</option></select></label>
-      <label>待ち<select id="machi"><option>両面</option><option>辺張</option><option>嵌張</option><option>シャンポン</option><option>単騎</option></select></label>
-      <label>上がり<select id="agari"><option>ツモ</option><option>ロン</option></select></label>
-      <label>特殊上がり<select id="special"><option>なし</option><option>七対子</option><option>平和ツモ</option><option>門前ロン</option></select></label>
-    </div>
-  </section>
+<section id="auto" class="tabpane">
+<section class="card"><h2>① 手牌</h2><p class="hint">牌をタップして入力。赤5は長押し/右クリックではなく、下の赤5切替で指定できる。</p>
+<div class="tile-grid" id="tileGrid"></div><div class="counter"><b id="handCount">0</b> / 14枚</div><div id="hand" class="tiles"></div>
+<div class="red5"><label class="inline"><input type="checkbox" id="red5m">赤5萬</label><label class="inline"><input type="checkbox" id="red5p">赤5筒</label><label class="inline"><input type="checkbox" id="red5s">赤5索</label></div>
+<button id="clearHand" class="wide ghost">手牌をクリア</button></section>
 
-  <section class="card">
-    <h2>飜数・親子</h2>
-    <div class="hanrow"><button id="minus">−</button><strong id="han">2</strong><button id="plus">＋</button><span>飜</span></div>
-    <div class="seg"><button data-parent="false" class="active">子</button><button data-parent="true">親</button></div>
-  </section>
+<section class="card"><h2>② 副露</h2><div class="meldBtns"><button data-type="chi">チー</button><button data-type="pon">ポン</button><button data-type="ankan">暗槓</button><button data-type="minkan">明槓</button></div>
+<div id="meldEditor" class="hidden"></div><div id="meldList"></div></section>
 
-  <section class="card result">
-    <div class="resultline"><span>面子構成</span><b id="mentsuFu">0符</b></div>
-    <div class="resultline"><span>小計</span><b id="subtotal">20符</b></div>
-    <div class="manual">
-      <label><input type="checkbox" id="manualOn"> 符を手動入力</label>
-      <input id="manualFu" type="number" min="0" step="1" placeholder="例：40" disabled>
-    </div>
-    <div class="big"><small>合計符</small><strong id="fu">20符</strong></div>
-    <div class="big"><small>点数</small><strong id="score">−</strong></div>
-    <div class="big secondary"><small>点数（青天井）</small><strong id="aoten">−</strong></div>
-  </section>
+<section class="card"><h2>③ 和了牌</h2><p class="hint">手牌の中の同一牌から和了牌を1種類選択。</p><div id="winChoices" class="tiles"></div></section>
 
-</main>
-<script src="app.js"></script>
-</body>
-</html>
+<section class="card"><h2>④ 局・和了条件</h2><div class="grid">
+<label>自風<select id="seat"><option value="1z">東</option><option value="2z">南</option><option value="3z">西</option><option value="4z">北</option></select></label>
+<label>場風<select id="round"><option value="1z">東</option><option value="2z">南</option><option value="3z">西</option><option value="4z">北</option></select></label>
+<label>親子<select id="dealer"><option value="false">子</option><option value="true">親</option></select></label>
+<label>和了<select id="winMethod"><option value="tsumo">ツモ</option><option value="ron">ロン</option></select></label>
+</div>
+<div class="multi-select" id="specialYakuSelect">
+<button type="button" class="multi-select-toggle" aria-expanded="false">特殊役を選択 <span id="specialYakuCount"></span><span class="chevron">⌄</span></button>
+<div class="multi-select-menu">
+<label><input type="checkbox" id="riichi">立直</label>
+<label><input type="checkbox" id="doubleRiichi">ダブル立直</label>
+<label><input type="checkbox" id="ippatsu">一発</label>
+<label><input type="checkbox" id="rinshan">嶺上開花</label>
+<label><input type="checkbox" id="chankan">槍槓</label>
+<label><input type="checkbox" id="haitei">海底摸月</label>
+<label><input type="checkbox" id="houtei">河底撈魚</label>
+<label><input type="checkbox" id="tenhou">天和</label>
+<label><input type="checkbox" id="chiihou">地和</label>
+</div></div></section>
+
+<section class="card"><h2>⑤ ドラ</h2><div class="grid">
+<label>ドラ表示牌（複数可）<div id="doraPicker" class="miniPicker"></div></label>
+<label>裏ドラ表示牌（複数可）<div id="uraPicker" class="miniPicker"></div></label>
+</div><div class="red5"><label class="inline"><input type="checkbox" id="uraEnabled">裏ドラを有効</label></div></section>
+
+<section class="card"><h2>⑥ ルール設定</h2><div class="checks">
+<label><input type="checkbox" id="kiriage">切り上げ満貫</label><label><input type="checkbox" id="kazoe" checked>数え役満</label><label><input type="checkbox" id="doubleYakuman" checked>ダブル役満</label><label><input type="checkbox" id="openTanyao" checked>喰いタン</label><label><input type="checkbox" id="doubleWind4">連風牌4符</label>
+</div></section>
+
+<section class="card result"><div id="status" class="status">牌を入力して和了牌を選択してね</div>
+<div id="yakuResult"></div><div class="resultline"><span>合計飜</span><b id="totalHan">—</b></div><div class="resultline"><span>符</span><b id="totalFu">—</b></div>
+<div class="big"><small>点数</small><strong id="autoScore">—</strong></div><div class="big secondary"><small>青天井</small><strong id="autoAoten">—</strong></div></section>
+</section></main><script src="app.js"></script></body></html>
